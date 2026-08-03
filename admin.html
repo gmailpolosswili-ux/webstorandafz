@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - S3L GMAIL ZERO09</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f1f5f9; color: #1e293b; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { margin-bottom: 20px; color: #0f172a; font-size: 24px; }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h2 { font-size: 18px; margin-bottom: 15px; color: #2563eb; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f8fafc; font-weight: 700; color: #475569; }
+        .btn-acc { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; }
+        .btn-rej { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Admin Panel S3L GMAIL ZERO09</h1>
+
+        <!-- Tabel Data User -->
+        <div class="card">
+            <h2>Daftar Pengguna Terdaftar</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Email</th>
+                        <th>Saldo</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="4" style="text-align: center;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabel Storan Gmail -->
+        <div class="card">
+            <h2>Daftar Storan Gmail Masuk</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email User</th>
+                        <th>Jumlah</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="storTableBody">
+                    <tr><td colspan="4" style="text-align: center;">Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Alamat Backend Pterodactyl Anda
+        const API_URL = 'http://server.bimxyz.my.id:3000';
+
+        async function loadAdminData() {
+            try {
+                // Load Users
+                const resUser = await fetch(`${API_URL}/api/admin/users`);
+                const users = await resUser.json();
+                let userHtml = '';
+                users.forEach(u => {
+                    userHtml += `<tr><td>${u.nama}</td><td>${u.email}</td><td>Rp${u.saldo}</td><td>${u.role}</td></tr>`;
+                });
+                document.getElementById('userTableBody').innerHTML = userHtml || '<tr><td colspan="4">Tidak ada user.</td></tr>';
+
+                // Load Storan
+                const resStor = await fetch(`${API_URL}/api/admin/storan`);
+                const storan = await resStor.json();
+                let storHtml = '';
+                storan.forEach(s => {
+                    storHtml += `<tr>
+                        <td>${s.user_email}</td>
+                        <td>${s.jumlah} Gmail</td>
+                        <td><b>${s.status}</b></td>
+                        <td>
+                            ${s.status === 'Pending' ? `
+                                <button class="btn-acc" onclick="updateStatus(${s.id}, 'Approved', '${s.user_email}', ${s.jumlah})">Acc</button>
+                                <button class="btn-rej" onclick="updateStatus(${s.id}, 'Rejected', '${s.user_email}', ${s.jumlah})">Tolak</button>
+                            ` : '-'}
+                        </td>
+                    </tr>`;
+                });
+                document.getElementById('storTableBody').innerHTML = storHtml || '<tr><td colspan="4" style="text-align: center;">Belum ada storan.</td></tr>';
+            } catch (err) {
+                console.error('Gagal memuat data admin', err);
+            }
+        }
+
+        async function updateStatus(id, status, user_email, jumlah) {
+            const res = await fetch(`${API_URL}/api/admin/update-storan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, status, user_email, jumlah })
+            });
+            const result = await res.json();
+            alert(result.message);
+            loadAdminData();
+        }
+
+        loadAdminData();
+    </script>
+</body>
+</html>
